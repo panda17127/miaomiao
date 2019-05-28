@@ -1,6 +1,6 @@
 <template>
    <div>
-      <Header></Header>
+      <Header title="我的喵喵"></Header>
       <Tabbar></Tabbar>
    </div>
 </template>
