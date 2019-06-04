@@ -42,14 +42,15 @@
       },
       watch: {
          message(newVal) {
+            let cityId = this.$store.state.city.id;
             this.cancelRequest();
-            this.axios.get('/api/searchList?cityId=10&kw=' + newVal, {
+            this.axios.get('/api/searchList?cityId='+ cityId +'&kw=' + newVal, {
                cancelToken: new this.axios.CancelToken((c) => {
                   this.source = c;
                })
             }).then(res => {
-               var msg = res.data.msg;
-               var movies = res.data.data.movies;
+               let msg = res.data.msg;
+               let movies = res.data.data.movies;
                if (msg === 'ok' && movies){
                   this.moviesList = movies.list;
                }

@@ -1,71 +1,97 @@
 <template>
    <div class="movie_body" ref="movie_body">
-      <ul>
-         <li class="pullDown">{{ pullDownMsg }}</li>
-         <li v-for="item in movieList" :key="item.id">
-            <div class="pic_show" @tap="handleToDetail(item.id)"><img :src="item.img | setWH('128.180')"></div>
-            <div class="info_list">
-               <h2 @tap="handleToDetail(item.id)">{{ item.nm }} <img v-if="item.version" src="@/assets/maxs.png" alt="">
-               </h2>
-               <p>观众评 <span class="grade">{{ item.sc }}</span></p>
-               <p>主演: {{ item.star }}</p>
-               <p>{{ item.showInfo }}</p>
-            </div>
-            <div class="btn_mall">
-               购票
-            </div>
-         </li>
-      </ul>
+      <Loading v-if="isLoading" />
+      <Scroller v-else :handleToScroll="handleToScroll" :handleToTouchEnd="handleToTouchEnd">
+         <ul>
+            <li class="pullDown">{{ pullDownMsg }}</li>
+            <li v-for="item in movieList" :key="item.id">
+               <div class="pic_show" @tap="handleToDetail(item.id)"><img :src="item.img | setWH('128.180')"></div>
+               <div class="info_list">
+                  <h2 @tap="handleToDetail(item.id)">{{ item.nm }} <img v-if="item.version" src="@/assets/maxs.png" alt="">
+                  </h2>
+                  <p>观众评 <span class="grade">{{ item.sc }}</span></p>
+                  <p>主演: {{ item.star }}</p>
+                  <p>{{ item.showInfo }}</p>
+               </div>
+               <div class="btn_mall">
+                  购票
+               </div>
+            </li>
+         </ul>
+      </Scroller>
    </div>
 </template>
 <script>
-   import BScroll from 'better-scroll';
-   
    export default {
       name: 'NowPlaying',
       data() {
          return {
             movieList: [],
-            pullDownMsg: ''
+            pullDownMsg: '',
+            isLoading: true,
+            prevCityId: -1
          }
       },
-      mounted() {
-         this.axios.get('/api/movieComingList?cityId=10').then(res => {
+      activated() {
+         let cityId = this.$store.state.city.id;
+         if (this.prevCityId === cityId) { return; }
+         this.isLoading = true;
+         this.axios.get('/api/movieComingList?cityId=' + cityId).then(res => {
             let msg = res.data.msg;
             if (msg === 'ok') {
                this.movieList = res.data.data.comingList;
-               this.$nextTick(() => {
-                  var scroll = new BScroll(this.$refs.movie_body, {
-                     tap: true,
-                     probeType: 1 // 1 会节流 2 不会节流
-                  });
-                  scroll.on('scroll', (pos) => {
-                     // console.log('scroll');
-                     if(pos.y > 30) {
-                        this.pullDownMsg = '正在更新中..';
-                     }
-                  })
-                  scroll.on('touchEnd', (pos) => {
-                     // console.log('touchend');
-                     if(pos.y > 30) {
-                        this.axios.get('/api/movieComingList?cityId=1').then(res => {
-                           if (msg === 'ok') {
-                              this.pullDownMsg = '更新成功';
-                              setTimeout(() => {
-                                 this.movieList = res.data.data.comingList;
-                                 this.pullDownMsg = '';
-                              }, 500)
-                           }
-                        })
-                     }
-                  })
-               })
+               this.isLoading = false;
+               this.prevCityId = cityId;
+               // this.$nextTick(() => {
+               //    var scroll = new BScroll(this.$refs.movie_body, {
+               //       tap: true,
+               //       probeType: 1 // 1 会节流 2 不会节流
+               //    });
+               //    scroll.on('scroll', (pos) => {
+               //       // console.log('scroll');
+               //       if(pos.y > 30) {
+               //          this.pullDownMsg = '正在更新中..';
+               //       }
+               //    })
+               //    scroll.on('touchEnd', (pos) => {
+               //       // console.log('touchend');
+               //       if(pos.y > 30) {
+               //          this.axios.get('/api/movieComingList?cityId=1').then(res => {
+               //             if (msg === 'ok') {
+               //                this.pullDownMsg = '更新成功';
+               //                setTimeout(() => {
+               //                   this.movieList = res.data.data.comingList;
+               //                   this.pullDownMsg = '';
+               //                }, 500)
+               //             }
+               //          })
+               //       }
+               //    })
+               // })
             }
          })
       },
       methods: {
          handleToDetail(id) {
             console.log('点击一下');
+         },
+         handleToScroll(pos) {
+            if(pos.y > 30) {
+               this.pullDownMsg = '正在更新中..';
+            }
+         },
+         handleToTouchEnd(pos) {
+            if(pos.y > 30) {
+               this.axios.get('/api/movieComingList?cityId=1').then(res => {
+                  if (res.data.msg === 'ok') {
+                     this.pullDownMsg = '更新成功';
+                     setTimeout(() => {
+                        this.movieList = res.data.data.comingList;
+                        this.pullDownMsg = '';
+                     }, 500)
+                  }
+               })
+            }
          }
       }
    }
